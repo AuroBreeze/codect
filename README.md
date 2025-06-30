@@ -1,22 +1,33 @@
-# CodeCT Extension
+# CodeCT - 代码统计工具
 
-A VS Code extension that tracks and exports your coding statistics including:
-- Characters typed/deleted  
-- Lines changed
-- Coding sessions
-- Projects worked on
+其他语言版本：
+- [English](README.en-US.md)
 
-## Features
-- Real-time stats display in status bar
-- View detailed statistics  
-- Export data in JSON/CSV/HTML formats
+一个VS Code扩展，用于跟踪和统计您的编程活动数据。
 
-## Usage
-1. Open any project in VS Code
-2. Statistics are automatically tracked
-3. Use the command palette (Ctrl+Shift+P) to:
-   - Show statistics: "Show Code Statistics"
-   - Export data: "Export Code Statistics"
+## 功能特性
+- 实时统计输入字符数
+- 记录删除的字符数
+- 跟踪代码行变更
+- 统计编码时长
+- 支持多项目管理
+- 导出统计报告(JSON/CSV/HTML)
 
-## Installation
-Install from the VS Code marketplace or from the packaged .vsix file.
+## 安装方法
+1. 下载最新版本VSIX文件
+2. 在VSCode中按Ctrl+Shift+P
+3. 输入"Extensions: Install from VSIX"
+4. 选择下载的VSIX文件安装
+
+## 使用方法
+- 命令面板输入"显示代码统计"查看数据
+- 输入"导出代码统计"生成报告
+- 状态栏实时显示输入统计
+
+## 配置选项
+暂无特殊配置
+
+## 开发计划
+- 添加更多统计维度
+- 支持云同步数据
+- 增加可视化图表
