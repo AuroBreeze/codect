@@ -7,26 +7,71 @@ export interface CodeStats {
     charsTyped: number;
     charsDeleted: number;
     linesChanged: number;
+    linesAdded: number;
+    linesRemoved: number;
     codingSessions: {start: Date, end: Date}[];
     projects: {name: string, path: string}[];
+    totalChars: number;
+    totalLines: number;
+    totalDuration: number;
 }
 
 export function activate(context: vscode.ExtensionContext) {
     const savedStats = context.globalState.get<CodeStats>('codeStats');
-    const stats: CodeStats = savedStats || {
+    // 恢复数据时确保日期对象正确转换
+    const stats: CodeStats = savedStats ? {
+        charsTyped: savedStats.charsTyped || 0,
+        charsDeleted: savedStats.charsDeleted || 0,
+        linesChanged: savedStats.linesChanged || 0,
+        linesAdded: savedStats.linesAdded || 0,
+        linesRemoved: savedStats.linesRemoved || 0,
+        codingSessions: (savedStats.codingSessions || []).map(s => ({
+            start: new Date(s.start),
+            end: new Date(s.end)
+        })),
+        projects: savedStats.projects || [],
+        totalChars: (savedStats.charsTyped || 0) + (savedStats.charsDeleted || 0),
+        totalLines: (savedStats.linesAdded || 0) + (savedStats.linesRemoved || 0),
+        totalDuration: (savedStats.codingSessions || []).reduce((sum, s) => 
+            sum + (new Date(s.end).getTime() - new Date(s.start).getTime()), 0)
+    } : {
         charsTyped: 0,
         charsDeleted: 0,
         linesChanged: 0,
+        linesAdded: 0,
+        linesRemoved: 0,
         codingSessions: [],
-        projects: []
+        projects: [],
+        totalChars: 0,
+        totalLines: 0,
+        totalDuration: 0
     };
 
     async function saveStats() {
-        await context.globalState.update('codeStats', stats);
+        // 深拷贝stats对象避免引用问题
+        const statsToSave = {
+            charsTyped: stats.charsTyped,
+            charsDeleted: stats.charsDeleted,
+            linesChanged: stats.linesChanged,
+            linesAdded: stats.linesAdded,
+            linesRemoved: stats.linesRemoved,
+            codingSessions: stats.codingSessions.map(s => ({
+                start: new Date(s.start),
+                end: new Date(s.end)
+            })),
+            projects: [...stats.projects],
+            totalChars: stats.totalChars,
+            totalLines: stats.totalLines,
+            totalDuration: stats.totalDuration
+        };
+        await context.globalState.update('codeStats', statsToSave);
     }
 
-    // Auto-save every 5 minutes
-    const saveInterval = setInterval(saveStats, 5 * 60 * 1000);
+    // Auto-save every 1 minute
+    const saveInterval = setInterval(saveStats, 60 * 1000);
+    
+    // 窗口关闭时立即保存
+    vscode.window.onDidCloseTerminal(saveStats);
 
     const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
     statusBarItem.text = `CodeCT: 0 chars`;
@@ -77,8 +122,15 @@ export function activate(context: vscode.ExtensionContext) {
         e.contentChanges.forEach(change => {
             stats.charsTyped += change.text.length;
             stats.charsDeleted += change.rangeLength;
-            if (change.text.includes('\n') || change.rangeLength > 0) {
-                stats.linesChanged++;
+            if (change.text.includes('\n')) {
+                const addedLines = change.text.split('\n').length - 1;
+                stats.linesAdded += addedLines;
+                stats.linesChanged += addedLines;
+            }
+            if (change.rangeLength > 0) {
+                const removedLines = e.document.getText(change.range).split('\n').length - 1;
+                stats.linesRemoved += removedLines;
+                stats.linesChanged += removedLines;
             }
             recordActivity();
             updateStats();
@@ -101,11 +153,20 @@ export function activate(context: vscode.ExtensionContext) {
             `• ${s.start.toLocaleTimeString()} - ${s.end.toLocaleTimeString()}`
         ).join('\n');
 
-        vscode.window.showInformationMessage(
+        const totalHours = Math.floor(stats.totalDuration / 1000 / 60 / 60);
+    const totalMinutes = Math.floor((stats.totalDuration / 1000 / 60) % 60);
+    
+    vscode.window.showInformationMessage(
             `Code Statistics:\n` +
+            `Total Duration: ${totalHours}h ${totalMinutes}m\n` +
+            `Total Characters: ${stats.totalChars}\n` +
+            `Total Lines: ${stats.totalLines}\n\n` +
+            `Details:\n` +
             `Characters Typed: ${stats.charsTyped}\n` +
             `Characters Deleted: ${stats.charsDeleted}\n` +
-            `Lines Changed: ${stats.linesChanged}\n\n` +
+            `Lines Changed: ${stats.linesChanged}\n` +
+            `Lines Added: ${stats.linesAdded}\n` +
+            `Lines Removed: ${stats.linesRemoved}\n\n` +
             `Projects:\n${projectList}\n\n` +
             `Coding Sessions:\n${sessionTimes}`
         );

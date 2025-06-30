@@ -37,7 +37,7 @@ export async function exportStats(stats: CodeStats) {
                 return;
         }
 
-        await fs.promises.writeFile(uri.fsPath, content);
+        await fs.promises.writeFile(uri.fsPath, content, { encoding: 'utf8' });
         vscode.window.showInformationMessage(`统计数据已导出为${format}格式`);
     } catch (err) {
         vscode.window.showErrorMessage(`导出失败: ${err}`);
@@ -46,9 +46,14 @@ export async function exportStats(stats: CodeStats) {
 
 function generateCSV(stats: CodeStats): string {
     let csv = 'Metric,Value\n';
+    csv += `Total Duration (minutes),${Math.floor(stats.totalDuration/1000/60)}\n`;
+    csv += `Total Characters,${stats.totalChars}\n`;
+    csv += `Total Lines,${stats.totalLines}\n\n`;
     csv += `Characters Typed,${stats.charsTyped}\n`;
     csv += `Characters Deleted,${stats.charsDeleted}\n`;
-    csv += `Lines Changed,${stats.linesChanged}\n\n`;
+    csv += `Lines Changed,${stats.linesChanged}\n`;
+    csv += `Lines Added,${stats.linesAdded}\n`;
+    csv += `Lines Removed,${stats.linesRemoved}\n\n`;
     
     csv += 'Project,Path\n';
     stats.projects.forEach(p => {
@@ -60,7 +65,8 @@ function generateCSV(stats: CodeStats): string {
         csv += `${s.start.toISOString()},${s.end.toISOString()}\n`;
     });
 
-    return csv;
+    // 添加UTF-8 BOM头确保Excel正确识别编码
+    return '\uFEFF' + csv;
 }
 
 function generateHTML(stats: CodeStats): string {
@@ -81,9 +87,16 @@ function generateHTML(stats: CodeStats): string {
     <h2>Summary</h2>
     <table>
         <tr><th>Metric</th><th>Value</th></tr>
+        <tr><th colspan="2">Summary</th></tr>
+        <tr><td>Total Duration</td><td>${Math.floor(stats.totalDuration/1000/60/60)}h ${Math.floor((stats.totalDuration/1000/60)%60)}m</td></tr>
+        <tr><td>Total Characters</td><td>${stats.totalChars}</td></tr>
+        <tr><td>Total Lines</td><td>${stats.totalLines}</td></tr>
+        <tr><th colspan="2">Details</th></tr>
         <tr><td>Characters Typed</td><td>${stats.charsTyped}</td></tr>
         <tr><td>Characters Deleted</td><td>${stats.charsDeleted}</td></tr>
         <tr><td>Lines Changed</td><td>${stats.linesChanged}</td></tr>
+        <tr><td>Lines Added</td><td>${stats.linesAdded}</td></tr>
+        <tr><td>Lines Removed</td><td>${stats.linesRemoved}</td></tr>
     </table>
 
     <h2>Projects</h2>
