@@ -1,10 +1,11 @@
 {
   "name": "codect",
+  "publisher": "aurobreeze",
   "displayName": "CodeCT",
   "description": "Track and export your coding statistics",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/codect.git"
+    "url": "https://github.com/AuroBreeze/codect.git"
   },
   "version": "0.0.1",
   "engines": {
