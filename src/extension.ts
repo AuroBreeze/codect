@@ -140,6 +140,17 @@ export function activate(context: vscode.ExtensionContext) {
     trackProject();
     vscode.workspace.onDidChangeWorkspaceFolders(trackProject);
 
+    // 监听窗口状态变化
+    vscode.window.onDidChangeWindowState(e => {
+        if (!e.focused) {
+            clearTimeout(sessionTimeout);
+            if (stats.codingSessions.length > 0) {
+                const lastSession = stats.codingSessions[stats.codingSessions.length-1];
+                lastSession.end = new Date();
+            }
+        }
+    });
+
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "codect" is now active!');

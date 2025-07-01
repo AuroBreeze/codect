@@ -9,7 +9,7 @@ export async function exportStats(stats: CodeStats) {
         placeHolder: '选择导出格式'
     });
 
-    if (!format) return;
+    if (!format) {return;}
 
     // 选择保存位置
     const uri = await vscode.window.showSaveDialog({
@@ -19,7 +19,7 @@ export async function exportStats(stats: CodeStats) {
         defaultUri: vscode.Uri.file(`code-stats-${new Date().toISOString().slice(0,10)}.${format.toLowerCase()}`)
     });
 
-    if (!uri) return;
+    if (!uri) {return;}
 
     try {
         let content: string;
