@@ -9,8 +9,9 @@ export interface CodeStats {
     linesChanged: number;
     linesAdded: number;
     linesRemoved: number;
-    codingSessions: {start: Date, end: Date}[];
+    codingSessions: {start: Date, end: Date, language?: string}[];
     projects: {name: string, path: string}[];
+    languages: {[key: string]: number}; // 语言 -> 总时长(毫秒)
     totalChars: number;
     totalLines: number;
     totalDuration: number;
@@ -27,9 +28,11 @@ export function activate(context: vscode.ExtensionContext) {
         linesRemoved: savedStats.linesRemoved || 0,
         codingSessions: (savedStats.codingSessions || []).map(s => ({
             start: new Date(s.start),
-            end: new Date(s.end)
+            end: new Date(s.end),
+            language: s.language
         })),
         projects: savedStats.projects || [],
+        languages: savedStats.languages || {},
         totalChars: (savedStats.charsTyped || 0) + (savedStats.charsDeleted || 0),
         totalLines: (savedStats.linesAdded || 0) + (savedStats.linesRemoved || 0),
         totalDuration: (savedStats.codingSessions || []).reduce((sum, s) => 
@@ -42,6 +45,7 @@ export function activate(context: vscode.ExtensionContext) {
         linesRemoved: 0,
         codingSessions: [],
         projects: [],
+        languages: {},
         totalChars: 0,
         totalLines: 0,
         totalDuration: 0
@@ -57,9 +61,11 @@ export function activate(context: vscode.ExtensionContext) {
             linesRemoved: stats.linesRemoved,
             codingSessions: stats.codingSessions.map(s => ({
                 start: new Date(s.start),
-                end: new Date(s.end)
+                end: new Date(s.end),
+                language: s.language
             })),
             projects: [...stats.projects],
+            languages: {...stats.languages},
             totalChars: stats.totalChars,
             totalLines: stats.totalLines,
             totalDuration: stats.totalDuration
@@ -97,19 +103,33 @@ export function activate(context: vscode.ExtensionContext) {
     let lastChangeTime = new Date();
     let sessionTimeout: NodeJS.Timeout;
 
-    function recordActivity() {
+    function recordActivity(e?: vscode.TextDocumentChangeEvent) {
         const now = new Date();
         clearTimeout(sessionTimeout);
+
+        // 获取当前文件语言
+        let language = '';
+        if (e) {
+            language = e.document.languageId;
+        }
 
         if (!stats.codingSessions.length || 
             now.getTime() - lastChangeTime.getTime() > 5*60*1000) {
             stats.codingSessions.push({
                 start: now,
-                end: now
+                end: now,
+                language
             });
         } else {
             const lastSession = stats.codingSessions[stats.codingSessions.length-1];
             lastSession.end = now;
+            lastSession.language = language || lastSession.language;
+        }
+
+        // 更新语言统计
+        if (language) {
+            const duration = now.getTime() - lastChangeTime.getTime();
+            stats.languages[language] = (stats.languages[language] || 0) + duration;
         }
 
         lastChangeTime = now;

@@ -121,6 +121,19 @@ function generateHTML(stats: CodeStats): string {
         ${stats.projects.map(p => `<tr><td>${p.name}</td><td>${p.path}</td></tr>`).join('')}
     </table>
 
+    <h2>Language Statistics</h2>
+    <table>
+        <tr><th>Language</th><th>Total Duration</th></tr>
+        ${Object.entries(stats.languages).map(([lang, duration]) => {
+            const hours = Math.floor(duration / 1000 / 60 / 60);
+            const minutes = Math.floor((duration / 1000 / 60) % 60);
+            return `<tr>
+                <td>${lang}</td>
+                <td>${hours}h ${minutes}m</td>
+            </tr>`;
+        }).join('')}
+    </table>
+
     <h2>Recent Coding Sessions (Last 7 Days)</h2>
     <table>
         <tr><th>Start Time</th><th>End Time</th><th>Duration</th></tr>
