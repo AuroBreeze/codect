@@ -3,6 +3,7 @@
   "publisher": "AuroBreeze",
   "displayName": "CodeCT",
   "description": "Track and export your coding statistics",
+  "icon": "codect.jpg",
   "repository": {
     "type": "git",
     "url": "https://github.com/AuroBreeze/codect.git"
