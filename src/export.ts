@@ -70,6 +70,22 @@ function generateCSV(stats: CodeStats): string {
 }
 
 function generateHTML(stats: CodeStats): string {
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    
+    // 分离最近7天和更早的会话
+    const recentSessions = stats.codingSessions.filter(s => 
+        new Date(s.start) >= sevenDaysAgo
+    );
+    const olderSessions = stats.codingSessions.filter(s => 
+        new Date(s.start) < sevenDaysAgo
+    );
+    
+    // 计算更早会话的总持续时间(分钟)
+    const olderDuration = olderSessions.reduce((sum, s) => 
+        sum + (new Date(s.end).getTime() - new Date(s.start).getTime()) / 1000 / 60, 0
+    );
+
     return `<!DOCTYPE html>
 <html>
 <head>
@@ -105,10 +121,10 @@ function generateHTML(stats: CodeStats): string {
         ${stats.projects.map(p => `<tr><td>${p.name}</td><td>${p.path}</td></tr>`).join('')}
     </table>
 
-    <h2>Coding Sessions</h2>
+    <h2>Recent Coding Sessions (Last 7 Days)</h2>
     <table>
         <tr><th>Start Time</th><th>End Time</th><th>Duration</th></tr>
-        ${stats.codingSessions.map(s => {
+        ${recentSessions.map(s => {
             const duration = (new Date(s.end).getTime() - new Date(s.start).getTime()) / 1000 / 60;
             return `<tr>
                 <td>${s.start.toLocaleString()}</td>
@@ -117,6 +133,17 @@ function generateHTML(stats: CodeStats): string {
             </tr>`;
         }).join('')}
     </table>
+
+    ${olderSessions.length > 0 ? `
+    <h2>Older Sessions (Before Last 7 Days)</h2>
+    <table>
+        <tr><th>Total Sessions</th><th>Total Duration</th></tr>
+        <tr>
+            <td>${olderSessions.length}</td>
+            <td>${Math.floor(olderDuration/60)}h ${Math.floor(olderDuration%60)}m</td>
+        </tr>
+    </table>
+    ` : ''}
 </body>
 </html>`;
 }
