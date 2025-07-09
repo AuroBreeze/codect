@@ -220,4 +220,7 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate(context: vscode.ExtensionContext) {
+    // 确保所有定时器和资源被清理
+    context.subscriptions.forEach(disposable => disposable.dispose());
+}
