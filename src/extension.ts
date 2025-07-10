@@ -171,6 +171,16 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
+    // 监听窗口关闭事件
+    vscode.window.onDidCloseTerminal(() => {
+        clearTimeout(sessionTimeout);
+        if (stats.codingSessions.length > 0) {
+            const lastSession = stats.codingSessions[stats.codingSessions.length-1];
+            lastSession.end = new Date();
+        }
+        saveStats();
+    });
+
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "codect" is now active!');
@@ -223,4 +233,11 @@ export function activate(context: vscode.ExtensionContext) {
 export function deactivate(context: vscode.ExtensionContext) {
     // 确保所有定时器和资源被清理
     context.subscriptions.forEach(disposable => disposable.dispose());
+    // 确保保存最后状态
+    const stats = context.globalState.get<CodeStats>('codeStats');
+    if (stats && stats.codingSessions.length > 0) {
+        const lastSession = stats.codingSessions[stats.codingSessions.length-1];
+        lastSession.end = new Date();
+        context.globalState.update('codeStats', stats);
+    }
 }
